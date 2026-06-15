@@ -1,0 +1,1334 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071120">
+  <title>百万一箱 - Deal or No Deal</title>
+  <style>
+    :root {
+      --bg: #050b16;
+      --panel: rgba(12, 25, 44, .88);
+      --panel-2: rgba(18, 37, 62, .92);
+      --line: rgba(162, 195, 229, .2);
+      --text: #f4f7fb;
+      --muted: #91a4bb;
+      --gold: #f6c85f;
+      --gold-2: #d89a27;
+      --red: #f05b5b;
+      --green: #52d39a;
+      --blue: #58a6ff;
+      --shadow: 0 22px 70px rgba(0, 0, 0, .38);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-height: 100%; background: var(--bg); }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(52, 117, 174, .34), transparent 37%),
+        radial-gradient(circle at 12% 55%, rgba(246, 200, 95, .08), transparent 27%),
+        linear-gradient(145deg, #07111f 0%, #030811 55%, #07111f 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .24;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(to bottom, black, transparent 92%);
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+
+    .app {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 20px clamp(14px, 2.5vw, 36px) 34px;
+      position: relative;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .brand { min-width: 0; }
+    .brand-kicker {
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 3px 0 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(24px, 3vw, 42px);
+      line-height: 1;
+      letter-spacing: -.03em;
+    }
+
+    .round-display {
+      min-width: 220px;
+      padding: 10px 20px;
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(5, 13, 25, .7);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .round-label { color: var(--muted); font-size: 12px; }
+    .round-value { margin-top: 2px; font-weight: 800; }
+
+    .top-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 12px;
+      background: rgba(13, 28, 48, .8);
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .icon-btn:hover { border-color: rgba(246, 200, 95, .55); transform: translateY(-1px); }
+    .icon-btn.sound-on { color: var(--gold); border-color: rgba(246, 200, 95, .38); }
+    .sound-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      margin-right: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 9px currentColor;
+      vertical-align: 1px;
+    }
+
+    .game-layout {
+      display: grid;
+      grid-template-columns: minmax(145px, 190px) minmax(0, 1fr) minmax(145px, 190px);
+      gap: clamp(14px, 2vw, 26px);
+      align-items: stretch;
+    }
+
+    .money-board {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(18, 37, 62, .9), rgba(6, 15, 28, .94));
+      box-shadow: var(--shadow);
+    }
+
+    .money-board h2 {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .money-list { display: grid; gap: 5px; }
+
+    .money-value {
+      position: relative;
+      overflow: hidden;
+      padding: 6px 8px;
+      color: #d7e2ee;
+      font-size: clamp(11px, 1.1vw, 14px);
+      font-weight: 800;
+      text-align: right;
+      border: 1px solid rgba(145, 164, 187, .12);
+      border-radius: 6px;
+      background: rgba(255,255,255,.035);
+      transition: .35s ease;
+    }
+
+    .money-value.high { color: #fff0bd; background: rgba(246, 200, 95, .08); }
+
+    .money-value.gone {
+      color: rgba(145,164,187,.35);
+      border-color: transparent;
+      background: rgba(255,255,255,.018);
+      text-decoration: line-through;
+      transform: scale(.96);
+    }
+
+    .stage {
+      min-height: 690px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 24%, rgba(56, 126, 190, .17), transparent 36%),
+        linear-gradient(180deg, rgba(14, 31, 53, .92), rgba(5, 13, 24, .96));
+      box-shadow: var(--shadow);
+    }
+
+    .status-panel {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 14px;
+      min-height: 88px;
+      padding: 16px clamp(16px, 2vw, 28px);
+      border-bottom: 1px solid var(--line);
+      background: rgba(2, 8, 16, .34);
+    }
+
+    .instruction {
+      font-size: clamp(16px, 1.6vw, 21px);
+      font-weight: 750;
+    }
+
+    .sub-instruction { margin-top: 5px; color: var(--muted); font-size: 12px; }
+
+    .case-counter {
+      min-width: 78px;
+      text-align: center;
+      padding: 9px 14px;
+      border: 1px solid rgba(246, 200, 95, .32);
+      border-radius: 11px;
+      background: rgba(246, 200, 95, .07);
+    }
+
+    .case-counter strong { display: block; color: var(--gold); font-size: 22px; line-height: 1; }
+    .case-counter span { color: var(--muted); font-size: 10px; }
+
+    .last-offer { text-align: right; }
+    .last-offer span { display: block; color: var(--muted); font-size: 11px; }
+    .last-offer strong { color: var(--gold); font-size: clamp(15px, 1.5vw, 20px); }
+
+    .cases-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(68px, 1fr));
+      align-content: center;
+      gap: clamp(11px, 1.5vw, 19px);
+      padding: clamp(25px, 4vw, 54px);
+      perspective: 1000px;
+    }
+
+    .case {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1.28 / 1;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      transition: transform .2s ease, filter .2s ease, opacity .35s ease;
+    }
+
+    .case::before {
+      content: "";
+      position: absolute;
+      top: -13%;
+      left: 35%;
+      width: 30%;
+      height: 21%;
+      border: 3px solid #b6bec7;
+      border-bottom: 0;
+      border-radius: 7px 7px 0 0;
+      background: #58616b;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.08);
+    }
+
+    .case-shell {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 2px solid #d6dce2;
+      border-radius: 7px;
+      color: #111923;
+      font-size: clamp(15px, 2vw, 26px);
+      font-weight: 900;
+      text-shadow: 0 1px rgba(255,255,255,.4);
+      background:
+        linear-gradient(120deg, transparent 25%, rgba(255,255,255,.65) 39%, transparent 52%),
+        linear-gradient(145deg, #f2f4f6 0%, #919aa4 48%, #e1e5e8 100%);
+      box-shadow: inset 0 0 0 3px rgba(55, 65, 75, .25), 0 9px 18px rgba(0,0,0,.32);
+    }
+
+    .case-shell::after {
+      content: "";
+      position: absolute;
+      inset: 8%;
+      border: 1px solid rgba(35,45,55,.28);
+      border-radius: 3px;
+    }
+
+    .case-number { position: relative; z-index: 1; }
+    .case:hover:not(:disabled) { transform: translateY(-7px) rotateX(5deg); filter: brightness(1.13); }
+    .case:focus-visible { outline: 3px solid var(--gold); outline-offset: 5px; border-radius: 8px; }
+
+    .case.player-case .case-shell {
+      border-color: #ffe19a;
+      background:
+        linear-gradient(120deg, transparent 25%, rgba(255,255,255,.5) 39%, transparent 52%),
+        linear-gradient(145deg, #ffe49a, #bd7e16 55%, #f8ca5e);
+      box-shadow: 0 0 0 4px rgba(246,200,95,.15), 0 12px 25px rgba(0,0,0,.4);
+    }
+
+    .case.player-case::after {
+      content: "你的箱子";
+      position: absolute;
+      z-index: 4;
+      left: 50%;
+      bottom: -25px;
+      width: max-content;
+      transform: translateX(-50%);
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .case.opened { cursor: default; transform: scale(.9); opacity: .42; }
+    .case.opened::before { opacity: .25; }
+    .case.opened .case-shell { color: transparent; filter: saturate(.1); box-shadow: none; }
+    .case.opened .case-shell::before {
+      content: attr(data-amount);
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      padding: 4px;
+      color: #fff;
+      font-size: clamp(9px, 1.2vw, 15px);
+      background: rgba(7, 14, 24, .92);
+    }
+
+    .case.revealing { z-index: 6; animation: revealCase .75s ease both; }
+
+    @keyframes revealCase {
+      0% { transform: scale(1); }
+      42% { transform: scale(1.32) rotateY(0); filter: brightness(1.35); }
+      75% { transform: scale(1.15) rotateY(180deg); }
+      100% { transform: scale(.9) rotateY(180deg); }
+    }
+
+    .stage-footer {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 14px 22px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--line);
+      background: rgba(2, 8, 16, .38);
+    }
+
+    .progress-track {
+      width: min(330px, 45%);
+      height: 5px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: rgba(255,255,255,.08);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--gold-2), var(--gold));
+      transition: width .45s ease;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      z-index: 50;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(1, 5, 12, .78);
+      backdrop-filter: blur(9px);
+      opacity: 0;
+      visibility: hidden;
+      transition: .25s ease;
+    }
+
+    .modal-backdrop.show { opacity: 1; visibility: visible; }
+
+    #offerModal {
+      background: rgba(1, 5, 12, .34);
+      backdrop-filter: blur(3px);
+    }
+
+    #offerModal .modal {
+      border-color: rgba(246,200,95,.46);
+      box-shadow: 0 30px 100px rgba(0,0,0,.72), 0 0 45px rgba(246,200,95,.08);
+    }
+
+    @media (min-width: 921px) {
+      body.offer-open .money-board {
+        position: relative;
+        z-index: 60;
+        border-color: rgba(246,200,95,.42);
+        box-shadow: 0 22px 70px rgba(0,0,0,.52), 0 0 0 3px rgba(246,200,95,.07);
+        transform: translateY(-2px);
+      }
+
+      body.offer-open .money-value:not(.gone) {
+        border-color: rgba(246,200,95,.22);
+      }
+    }
+
+    .modal {
+      width: min(550px, 100%);
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      padding: clamp(24px, 4vw, 42px);
+      text-align: center;
+      border: 1px solid rgba(246,200,95,.28);
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 50% 0, rgba(246,200,95,.12), transparent 34%),
+        linear-gradient(160deg, #11243c, #07101e 72%);
+      box-shadow: 0 30px 100px rgba(0,0,0,.62);
+      transform: translateY(18px) scale(.98);
+      transition: .3s ease;
+    }
+
+    .show .modal { transform: translateY(0) scale(1); }
+    .phone-ring { width: 52px; height: 3px; margin: 0 auto 24px; border-radius: 99px; background: var(--gold); box-shadow: 0 0 22px var(--gold); }
+    .modal-kicker { color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    .modal h2 { margin: 9px 0 8px; font-size: clamp(25px, 5vw, 38px); }
+    .modal-copy { margin: 0; color: var(--muted); line-height: 1.65; }
+    .offer-amount { margin: 23px 0 7px; color: var(--gold); font-family: Georgia, serif; font-size: clamp(38px, 9vw, 68px); line-height: 1; text-shadow: 0 0 30px rgba(246,200,95,.18); }
+    .offer-meta { color: var(--muted); font-size: 12px; }
+
+    .offer-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 22px 0;
+    }
+
+    .stat {
+      padding: 10px 6px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255,255,255,.025);
+    }
+
+    .stat span { display: block; margin-bottom: 3px; color: var(--muted); font-size: 10px; }
+    .stat strong { font-size: 13px; }
+
+    .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .btn {
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 15px;
+      font-weight: 850;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+    .btn-primary { color: #17130b; border-color: transparent; background: linear-gradient(135deg, #ffe495, #d99b29); }
+    .btn-danger { color: white; border-color: rgba(240,91,91,.35); background: rgba(240,91,91,.14); }
+    .btn-ghost { color: #d7e4f2; background: rgba(255,255,255,.04); }
+    .btn-wide { grid-column: 1 / -1; }
+
+    .counter-panel {
+      display: none;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .counter-panel.show { display: block; animation: fadeUp .3s ease both; }
+    .counter-label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 12px; text-align: left; }
+    .counter-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    .counter-input {
+      min-width: 0;
+      padding: 12px 14px;
+      color: white;
+      border: 1px solid rgba(246,200,95,.32);
+      border-radius: 11px;
+      outline: none;
+      background: rgba(2,8,16,.55);
+    }
+    .counter-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(246,200,95,.1); }
+    .counter-hint { min-height: 18px; margin-top: 7px; color: var(--muted); font-size: 11px; text-align: left; }
+
+    .result-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 24px 0;
+    }
+    .result-card { padding: 15px 8px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.03); }
+    .result-card span { display: block; color: var(--muted); font-size: 11px; }
+    .result-card strong { display: block; margin-top: 5px; font-size: 19px; }
+    .result-card.winner { border-color: rgba(246,200,95,.45); background: rgba(246,200,95,.08); }
+
+    .toast {
+      position: fixed;
+      z-index: 80;
+      left: 50%;
+      bottom: 26px;
+      max-width: min(460px, calc(100vw - 30px));
+      padding: 12px 18px;
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      color: #eaf2fb;
+      background: rgba(11, 25, 43, .96);
+      box-shadow: 0 14px 40px rgba(0,0,0,.45);
+      transform: translate(-50%, 30px);
+      opacity: 0;
+      pointer-events: none;
+      transition: .25s ease;
+    }
+
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    .toast.good { border-color: rgba(82,211,154,.4); }
+    .toast.bad { border-color: rgba(240,91,91,.4); }
+
+    .rules {
+      width: min(620px, 100%);
+      text-align: left;
+    }
+    .rules h3 { margin: 18px 0 7px; color: var(--gold); font-size: 14px; }
+    .rules p, .rules li { color: #bac9d9; font-size: 13px; line-height: 1.7; }
+    .rules ol { margin: 0; padding-left: 20px; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } }
+
+    @media (max-width: 920px) {
+      .topbar { grid-template-columns: 1fr auto; }
+      .round-display { grid-row: 2; grid-column: 1 / -1; width: 100%; }
+      .game-layout { grid-template-columns: 112px minmax(0, 1fr) 112px; gap: 10px; }
+      .money-board { padding: 9px; border-radius: 13px; }
+      .money-value { padding: 5px 4px; }
+      .stage { min-height: 600px; }
+      .cases-grid { grid-template-columns: repeat(5, minmax(52px, 1fr)); padding: 34px 24px; }
+      .status-panel { grid-template-columns: 1fr auto; }
+      .last-offer { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      .app { padding: 12px 9px 20px; }
+      .brand-kicker { font-size: 9px; }
+      .top-actions .label { display: none; }
+      .game-layout { display: flex; flex-wrap: wrap; }
+      .stage { order: 1; width: 100%; min-height: 520px; border-radius: 17px; }
+      .money-board { order: 2; width: calc(50% - 5px); }
+      .money-board h2 { margin-bottom: 6px; }
+      .money-list { grid-template-columns: 1fr; gap: 3px; }
+      .money-value { text-align: center; font-size: 11px; padding: 4px; }
+      .cases-grid { grid-template-columns: repeat(5, minmax(46px, 1fr)); gap: 13px 8px; padding: 28px 15px; }
+      .case::before { border-width: 2px; }
+      .status-panel { min-height: 76px; padding: 12px 14px; }
+      .instruction { font-size: 15px; }
+      .sub-instruction { font-size: 10px; }
+      .case-counter { min-width: 64px; padding: 8px; }
+      .stage-footer { min-height: 52px; padding: 10px 14px; }
+      .progress-track { width: 38%; }
+      .modal { padding: 27px 18px; border-radius: 18px; }
+      #offerModal {
+        place-items: end center;
+        padding: 10px;
+        background: rgba(1, 5, 12, .2);
+        backdrop-filter: none;
+        pointer-events: none;
+      }
+      #offerModal .modal {
+        width: 100%;
+        max-height: 68vh;
+        padding: 20px 16px;
+        pointer-events: auto;
+      }
+      #offerModal .phone-ring { margin-bottom: 13px; }
+      #offerModal .offer-amount { margin: 14px 0 5px; font-size: clamp(38px, 14vw, 58px); }
+      #offerModal .offer-stats { margin: 14px 0; }
+      .offer-stats { gap: 5px; }
+      .stat strong { font-size: 11px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-kicker">Deal or No Deal</div>
+        <h1>百万一箱</h1>
+      </div>
+      <div class="round-display" aria-live="polite">
+        <div class="round-label">本局进度</div>
+        <div class="round-value" id="roundValue">选择你的箱子</div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn sound-on" id="soundBtn" type="button" aria-pressed="true"><span class="sound-dot"></span><span id="soundLabel">音效 开</span></button>
+        <button class="icon-btn" id="rulesBtn" type="button">规则</button>
+        <button class="icon-btn" id="newGameBtn" type="button">重新开局</button>
+      </div>
+    </header>
+
+    <section class="game-layout">
+      <aside class="money-board" aria-label="较低金额">
+        <h2>剩余金额</h2>
+        <div class="money-list" id="lowMoney"></div>
+      </aside>
+
+      <section class="stage">
+        <div class="status-panel">
+          <div>
+            <div class="instruction" id="instruction">先选一个属于你的箱子</div>
+            <div class="sub-instruction" id="subInstruction">它会陪你走到最后，除非你与银行家成交</div>
+          </div>
+          <div class="case-counter" id="caseCounter">
+            <strong>1</strong>
+            <span>请选择</span>
+          </div>
+          <div class="last-offer">
+            <span>上次报价</span>
+            <strong id="lastOffer">--</strong>
+          </div>
+        </div>
+
+        <div class="cases-grid" id="casesGrid" aria-label="26个箱子"></div>
+
+        <footer class="stage-footer">
+          <span id="footerText">金额已经随机装入26个箱子</span>
+          <div class="progress-track" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+          <span id="historyText">本机战绩：0 局</span>
+        </footer>
+      </section>
+
+      <aside class="money-board" aria-label="较高金额">
+        <h2>大奖金额</h2>
+        <div class="money-list" id="highMoney"></div>
+      </aside>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="offerModal" role="dialog" aria-modal="true" aria-labelledby="offerTitle">
+    <div class="modal">
+      <div class="phone-ring"></div>
+      <div class="modal-kicker">银行家来电</div>
+      <h2 id="offerTitle">他要买下你的箱子</h2>
+      <p class="modal-copy">银行家给出的现金报价是</p>
+      <div class="offer-amount" id="offerAmount">$0</div>
+      <div class="offer-meta" id="offerMeta">报价正在计算</div>
+      <div class="offer-stats">
+        <div class="stat"><span>剩余平均值</span><strong id="expectedValue">$0</strong></div>
+        <div class="stat"><span>场上最高</span><strong id="highestValue">$0</strong></div>
+        <div class="stat"><span>大额箱概率</span><strong id="bigChance">0%</strong></div>
+      </div>
+      <div class="modal-actions" id="offerActions">
+        <button class="btn btn-primary" id="dealBtn" type="button">DEAL 成交</button>
+        <button class="btn btn-danger" id="noDealBtn" type="button">NO DEAL 继续</button>
+        <button class="btn btn-ghost btn-wide" id="counterBtn" type="button">向银行家还价</button>
+      </div>
+      <div class="counter-panel" id="counterPanel">
+        <label class="counter-label" for="counterInput">你的要价</label>
+        <div class="counter-row">
+          <input class="counter-input" id="counterInput" type="number" min="1" step="1000" inputmode="decimal">
+          <button class="btn btn-primary" id="submitCounterBtn" type="button">提交还价</button>
+        </div>
+        <div class="counter-hint" id="counterHint">要价越接近剩余平均值，银行家越可能接受。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="finalModal" role="dialog" aria-modal="true" aria-labelledby="finalTitle">
+    <div class="modal">
+      <div class="modal-kicker">最后抉择</div>
+      <h2 id="finalTitle">只剩两个箱子</h2>
+      <p class="modal-copy" id="finalCopy">你可以坚持最初的选择，也可以与最后一个箱子交换。</p>
+      <div class="offer-stats">
+        <div class="stat"><span>你的箱子</span><strong id="yourCaseLabel">#--</strong></div>
+        <div class="stat"><span>另一个箱子</span><strong id="otherCaseLabel">#--</strong></div>
+        <div class="stat"><span>两箱平均值</span><strong id="finalAverage">$0</strong></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="keepBtn" type="button">坚持原箱</button>
+        <button class="btn btn-ghost" id="swapBtn" type="button">交换箱子</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="resultModal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="modal">
+      <div class="modal-kicker" id="resultKicker">本局结束</div>
+      <h2 id="resultTitle">你带走了</h2>
+      <div class="offer-amount" id="winningsAmount">$0</div>
+      <p class="modal-copy" id="resultCopy"></p>
+      <div class="result-comparison">
+        <div class="result-card winner"><span>实际奖金</span><strong id="actualWin">$0</strong></div>
+        <div class="result-card"><span>原箱金额</span><strong id="caseValue">$0</strong></div>
+      </div>
+      <button class="btn btn-primary" id="playAgainBtn" type="button" style="width:100%">再玩一局</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="rulesModal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <div class="modal rules">
+      <div class="modal-kicker">游戏说明</div>
+      <h2 id="rulesTitle">怎样赢下百万</h2>
+      <ol>
+        <li>先从26个箱子中选一个作为你的箱子。</li>
+        <li>每轮按提示打开其他箱子，开出的金额会从奖金板上消失。</li>
+        <li>每轮结束后，银行家会报价购买你的箱子。你可以成交、拒绝，或还价一次。</li>
+        <li>银行家会根据场上剩余金额和你的要价判断是否接受还价；若拒绝，本轮直接视为 NO DEAL。</li>
+        <li>坚持到最后时，你可以保留原箱，或与最后一个箱子交换。</li>
+      </ol>
+      <h3>一个小提示</h3>
+      <p>“剩余平均值”是纯数学参考，并不等于你的箱子一定值那么多。报价越接近平均值，通常越值得认真考虑。</p>
+      <button class="btn btn-primary" id="closeRulesBtn" type="button" style="width:100%; margin-top:12px">明白了</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const AMOUNTS = [
+        0.1, 1, 5, 10, 25, 50, 75, 100, 200, 300, 400, 500, 750,
+        1000, 5000, 10000, 25000, 50000, 75000, 100000, 200000,
+        300000, 400000, 500000, 750000, 1000000
+      ];
+      const ROUND_TARGETS = [6, 5, 4, 3, 2, 1, 1, 1, 1];
+
+      const el = id => document.getElementById(id);
+      const dom = {
+        grid: el("casesGrid"), lowMoney: el("lowMoney"), highMoney: el("highMoney"),
+        instruction: el("instruction"), subInstruction: el("subInstruction"), caseCounter: el("caseCounter"),
+        roundValue: el("roundValue"), lastOffer: el("lastOffer"), footerText: el("footerText"),
+        historyText: el("historyText"), progressBar: el("progressBar"), offerModal: el("offerModal"),
+        offerAmount: el("offerAmount"), offerMeta: el("offerMeta"), expectedValue: el("expectedValue"),
+        highestValue: el("highestValue"), bigChance: el("bigChance"), counterPanel: el("counterPanel"),
+        counterInput: el("counterInput"), counterHint: el("counterHint"), finalModal: el("finalModal"),
+        yourCaseLabel: el("yourCaseLabel"), otherCaseLabel: el("otherCaseLabel"), finalAverage: el("finalAverage"),
+        resultModal: el("resultModal"), resultKicker: el("resultKicker"), winningsAmount: el("winningsAmount"),
+        resultCopy: el("resultCopy"), actualWin: el("actualWin"), caseValue: el("caseValue"),
+        rulesModal: el("rulesModal"), toast: el("toast"), soundBtn: el("soundBtn"), soundLabel: el("soundLabel")
+      };
+
+      let state = {};
+      let toastTimer;
+      let audioEnabled = true;
+      let audioContext = null;
+      let audioMaster = null;
+
+      try { audioEnabled = localStorage.getItem("millionCaseSound") !== "off"; } catch (_) {}
+
+      function ensureAudio() {
+        if (!audioEnabled) return null;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return null;
+        if (!audioContext) {
+          audioContext = new AudioCtx();
+          const compressor = audioContext.createDynamicsCompressor();
+          compressor.threshold.value = -18;
+          compressor.knee.value = 16;
+          compressor.ratio.value = 5;
+          compressor.attack.value = .003;
+          compressor.release.value = .22;
+          audioMaster = audioContext.createGain();
+          audioMaster.gain.value = .32;
+          audioMaster.connect(compressor);
+          compressor.connect(audioContext.destination);
+        }
+        if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+        return audioContext;
+      }
+
+      function tone(frequency, duration, options = {}) {
+        const ctx = ensureAudio();
+        if (!ctx || !audioMaster) return;
+        const when = ctx.currentTime + (options.delay || 0);
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        oscillator.type = options.type || "sine";
+        oscillator.frequency.setValueAtTime(Math.max(30, frequency), when);
+        if (options.endFrequency) {
+          oscillator.frequency.exponentialRampToValueAtTime(Math.max(30, options.endFrequency), when + duration);
+        }
+        gain.gain.setValueAtTime(.0001, when);
+        gain.gain.exponentialRampToValueAtTime(options.volume || .18, when + Math.min(.025, duration / 3));
+        gain.gain.exponentialRampToValueAtTime(.0001, when + duration);
+        oscillator.connect(gain);
+        gain.connect(audioMaster);
+        oscillator.start(when);
+        oscillator.stop(when + duration + .03);
+      }
+
+      function noise(duration, options = {}) {
+        const ctx = ensureAudio();
+        if (!ctx || !audioMaster) return;
+        const when = ctx.currentTime + (options.delay || 0);
+        const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+        const source = ctx.createBufferSource();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+        source.buffer = buffer;
+        filter.type = options.filter || "lowpass";
+        filter.frequency.value = options.frequency || 420;
+        gain.gain.setValueAtTime(.0001, when);
+        gain.gain.exponentialRampToValueAtTime(options.volume || .08, when + .015);
+        gain.gain.exponentialRampToValueAtTime(.0001, when + duration);
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioMaster);
+        source.start(when);
+      }
+
+      function playSound(name, detail = 0) {
+        if (!audioEnabled || !ensureAudio()) return;
+        const note = (frequency, duration, delay, type = "sine", volume = .18, endFrequency = 0) =>
+          tone(frequency, duration, { delay, type, volume, endFrequency });
+
+        if (name === "select") {
+          note(330, .12, 0, "triangle", .17);
+          note(494, .14, .08, "triangle", .17);
+          note(659, .25, .16, "triangle", .2);
+        } else if (name === "open") {
+          noise(.64, { volume: .055, frequency: 280 });
+          [0, .15, .3, .45, .58].forEach((delay, index) => note(190 + index * 52, .055, delay, "square", .06));
+          note(72, .68, 0, "sine", .08, 108);
+        } else if (name === "reveal") {
+          if (detail <= 1000) {
+            note(523, .15, 0, "triangle", .17);
+            note(659, .16, .09, "triangle", .16);
+            note(784, .3, .18, "sine", .2);
+          } else if (detail >= 100000) {
+            noise(.3, { volume: .12, frequency: 180 });
+            note(170, .5, 0, "sawtooth", .15, 58);
+            note(92, .58, .08, "square", .09, 42);
+          } else {
+            note(392, .12, 0, "triangle", .13);
+            note(311, .28, .1, "triangle", .14);
+          }
+        } else if (name === "phone") {
+          [0, .12, .55, .67].forEach(delay => {
+            note(920, .1, delay, "sine", .16);
+            note(1110, .1, delay + .045, "sine", .12);
+          });
+          note(138, .85, 0, "sine", .07);
+        } else if (name === "deal") {
+          noise(.18, { volume: .08, frequency: 1300 });
+          [262, 330, 392, 523].forEach((frequency, index) => note(frequency, .38, index * .095, "triangle", .16));
+          [523, 659, 784].forEach(frequency => note(frequency, .7, .4, "sine", .11));
+        } else if (name === "noDeal") {
+          noise(.16, { volume: .12, frequency: 260 });
+          note(105, .24, 0, "square", .15, 62);
+          note(294, .18, .13, "sawtooth", .08, 440);
+        } else if (name === "counter") {
+          [0, .22, .44, .66, .88].forEach((delay, index) => note(250 + index * 25, .065, delay, "square", .07));
+          note(68, 1.0, 0, "sine", .08, 95);
+        } else if (name === "counterRejected") {
+          note(247, .18, 0, "square", .12);
+          note(185, .22, .13, "square", .13);
+          note(123, .42, .28, "sawtooth", .14, 62);
+        } else if (name === "final") {
+          [0, .34, .68].forEach(delay => {
+            note(62, .12, delay, "sine", .18);
+            note(48, .18, delay + .09, "sine", .13);
+          });
+          note(220, 1.1, 0, "sine", .045, 330);
+        } else if (name === "finalReveal") {
+          if (detail >= 100000) {
+            [392, 523, 659, 784, 1047].forEach((frequency, index) => note(frequency, .48, index * .09, "triangle", .16));
+            noise(.55, { delay: .28, volume: .07, frequency: 1800, filter: "highpass" });
+          } else {
+            note(330, .16, 0, "triangle", .14);
+            note(440, .2, .12, "triangle", .14);
+            note(523, .42, .25, "sine", .16);
+          }
+        }
+      }
+
+      function updateSoundButton() {
+        dom.soundBtn.classList.toggle("sound-on", audioEnabled);
+        dom.soundBtn.setAttribute("aria-pressed", String(audioEnabled));
+        dom.soundLabel.textContent = audioEnabled ? "音效 开" : "音效 关";
+      }
+
+      function toggleSound() {
+        audioEnabled = !audioEnabled;
+        try { localStorage.setItem("millionCaseSound", audioEnabled ? "on" : "off"); } catch (_) {}
+        updateSoundButton();
+        if (audioEnabled) {
+          ensureAudio();
+          if (audioMaster && audioContext) audioMaster.gain.setTargetAtTime(.32, audioContext.currentTime, .02);
+          playSound("select");
+          showToast("音效已开启", "good");
+        } else {
+          if (audioMaster && audioContext) audioMaster.gain.setTargetAtTime(.0001, audioContext.currentTime, .02);
+          showToast("音效已关闭");
+        }
+      }
+
+      function shuffle(values) {
+        const copy = [...values];
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      }
+
+      function money(value) {
+        if (value < 1) return `$${value.toFixed(2)}`;
+        return `$${Math.round(value).toLocaleString("en-US")}`;
+      }
+
+      function shortMoney(value) {
+        if (value >= 1000000) return `$${(value / 1000000).toFixed(value % 1000000 ? 1 : 0)}M`;
+        if (value >= 1000) return `$${(value / 1000).toFixed(value % 1000 ? 1 : 0)}K`;
+        return money(value);
+      }
+
+      function loadStats() {
+        try {
+          return JSON.parse(localStorage.getItem("millionCaseStats")) || { games: 0, deals: 0, total: 0, best: 0 };
+        } catch (_) {
+          return { games: 0, deals: 0, total: 0, best: 0 };
+        }
+      }
+
+      function saveResult(winnings, wasDeal) {
+        const stats = loadStats();
+        stats.games += 1;
+        stats.deals += wasDeal ? 1 : 0;
+        stats.total += winnings;
+        stats.best = Math.max(stats.best, winnings);
+        try { localStorage.setItem("millionCaseStats", JSON.stringify(stats)); } catch (_) {}
+        renderStats();
+      }
+
+      function renderStats() {
+        const stats = loadStats();
+        dom.historyText.textContent = stats.games
+          ? `本机战绩：${stats.games} 局 · 最佳 ${shortMoney(stats.best)}`
+          : "本机战绩：0 局";
+      }
+
+      function initGame() {
+        const packed = shuffle(AMOUNTS);
+        state = {
+          cases: packed.map((amount, i) => ({ number: i + 1, amount, opened: false })),
+          playerCase: null,
+          phase: "choose",
+          round: 0,
+          openedThisRound: 0,
+          currentOffer: 0,
+          lastOffer: 0,
+          counterUsed: false,
+          locked: false
+        };
+        [dom.offerModal, dom.finalModal, dom.resultModal, dom.rulesModal].forEach(closeModal);
+        dom.counterPanel.classList.remove("show");
+        dom.lastOffer.textContent = "--";
+        buildMoneyBoards();
+        buildCases();
+        updateUI();
+        renderStats();
+      }
+
+      function buildMoneyBoards() {
+        dom.lowMoney.innerHTML = "";
+        dom.highMoney.innerHTML = "";
+        AMOUNTS.forEach((amount, index) => {
+          const item = document.createElement("div");
+          item.className = `money-value${index >= 13 ? " high" : ""}`;
+          item.dataset.amount = String(amount);
+          item.textContent = money(amount);
+          (index < 13 ? dom.lowMoney : dom.highMoney).appendChild(item);
+        });
+      }
+
+      function buildCases() {
+        dom.grid.innerHTML = "";
+        state.cases.forEach(item => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "case";
+          button.dataset.number = item.number;
+          button.setAttribute("aria-label", `${item.number}号箱`);
+          button.innerHTML = `<span class="case-shell"><span class="case-number">${String(item.number).padStart(2, "0")}</span></span>`;
+          button.addEventListener("click", () => handleCaseClick(item.number));
+          dom.grid.appendChild(button);
+        });
+      }
+
+      function handleCaseClick(number) {
+        if (state.locked || state.phase === "finished") return;
+        const item = state.cases.find(c => c.number === number);
+        if (!item || item.opened) return;
+
+        if (state.phase === "choose") {
+          state.playerCase = number;
+          state.phase = "opening";
+          dom.grid.querySelector(`[data-number="${number}"]`).classList.add("player-case");
+          playSound("select");
+          showToast(`你选择了 ${number} 号箱。现在开始开箱。`, "good");
+          updateUI();
+          return;
+        }
+
+        if (state.phase !== "opening" || number === state.playerCase) return;
+        openCase(item);
+      }
+
+      function openCase(item) {
+        state.locked = true;
+        item.opened = true;
+        state.openedThisRound += 1;
+        playSound("open");
+        const button = dom.grid.querySelector(`[data-number="${item.number}"]`);
+        button.querySelector(".case-shell").dataset.amount = money(item.amount);
+        button.classList.add("revealing");
+        button.disabled = true;
+
+        setTimeout(() => {
+          playSound("reveal", item.amount);
+          button.classList.remove("revealing");
+          button.classList.add("opened");
+          markAmountGone(item.amount);
+          state.locked = false;
+          updateUI();
+
+          const target = ROUND_TARGETS[state.round];
+          if (state.openedThisRound >= target) {
+            state.phase = "offer";
+            state.locked = true;
+            updateUI();
+            setTimeout(showBankerOffer, 850);
+          }
+        }, 760);
+      }
+
+      function markAmountGone(amount) {
+        document.querySelectorAll(".money-value").forEach(node => {
+          if (Number(node.dataset.amount) === amount) node.classList.add("gone");
+        });
+      }
+
+      function remainingCases() {
+        return state.cases.filter(c => !c.opened);
+      }
+
+      function calculateOffer() {
+        const values = remainingCases().map(c => c.amount);
+        const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+        const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
+        const volatility = Math.sqrt(variance) / Math.max(mean, 1);
+        const progress = (state.round + 1) / ROUND_TARGETS.length;
+        const baseFactor = .35 + progress * .53;
+        const riskAdjustment = Math.max(.76, Math.min(1.04, 1.07 - volatility * .11));
+        const bankerMood = .95 + Math.random() * .1;
+        let offer = mean * baseFactor * riskAdjustment * bankerMood;
+        offer = Math.min(offer, Math.max(...values) * .97);
+        return roundOffer(Math.max(1, offer));
+      }
+
+      function roundOffer(value) {
+        let unit = 1;
+        if (value >= 500000) unit = 10000;
+        else if (value >= 100000) unit = 5000;
+        else if (value >= 10000) unit = 1000;
+        else if (value >= 1000) unit = 100;
+        else if (value >= 100) unit = 10;
+        return Math.max(1, Math.round(value / unit) * unit);
+      }
+
+      function showBankerOffer() {
+        const values = remainingCases().map(c => c.amount);
+        const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+        const high = Math.max(...values);
+        const bigThreshold = 100000;
+        const bigChance = values.filter(v => v >= bigThreshold).length / values.length;
+        const offer = calculateOffer();
+        state.currentOffer = offer;
+        state.lastOffer = offer;
+        state.counterUsed = false;
+        state.locked = false;
+
+        dom.offerAmount.textContent = money(offer);
+        dom.expectedValue.textContent = money(mean);
+        dom.highestValue.textContent = money(high);
+        dom.bigChance.textContent = `${Math.round(bigChance * 100)}%`;
+        dom.offerMeta.textContent = `第 ${state.round + 1} 轮报价 · 相当于剩余平均值的 ${Math.round(offer / mean * 100)}%`;
+        dom.counterInput.value = roundOffer(offer * 1.12);
+        dom.counterInput.max = Math.ceil(high);
+        dom.counterHint.textContent = "要价越接近剩余平均值，银行家越可能接受。";
+        dom.counterPanel.classList.remove("show");
+        playSound("phone");
+        openModal(dom.offerModal);
+        updateUI();
+      }
+
+      function acceptDeal(amount, countered = false) {
+        closeModal(dom.offerModal);
+        playSound("deal");
+        state.phase = "finished";
+        state.locked = true;
+        const ownCase = state.cases.find(c => c.number === state.playerCase);
+        revealAllCases();
+        saveResult(amount, true);
+        showResult({
+          winnings: amount,
+          originalValue: ownCase.amount,
+          kicker: countered ? "还价成功" : "DEAL",
+          copy: amount >= ownCase.amount
+            ? `漂亮的决定。你比原箱金额多拿了 ${money(amount - ownCase.amount)}。`
+            : `你的原箱里有 ${money(ownCase.amount)}，但落袋的现金也是真金白银。`
+        });
+      }
+
+      function rejectOffer(message = "你拒绝了银行家的报价。") {
+        closeModal(dom.offerModal);
+        playSound("noDeal");
+        showToast(message, "bad");
+        advanceRound();
+      }
+
+      function advanceRound() {
+        state.openedThisRound = 0;
+        state.round += 1;
+        state.locked = false;
+
+        if (state.round >= ROUND_TARGETS.length) {
+          state.phase = "final";
+          setTimeout(showFinalChoice, 450);
+        } else {
+          state.phase = "opening";
+          updateUI();
+        }
+      }
+
+      function submitCounter() {
+        if (state.counterUsed) return;
+        const ask = Number(dom.counterInput.value);
+        const values = remainingCases().map(c => c.amount);
+        const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+        const max = Math.max(...values);
+
+        if (!Number.isFinite(ask) || ask <= state.currentOffer) {
+          dom.counterHint.textContent = `还价必须高于银行家的 ${money(state.currentOffer)}。`;
+          dom.counterInput.focus();
+          return;
+        }
+        if (ask > max) {
+          dom.counterHint.textContent = `银行家不会接受高于场上最高金额 ${money(max)} 的要价。`;
+          dom.counterInput.focus();
+          return;
+        }
+
+        state.counterUsed = true;
+        playSound("counter");
+        const progress = (state.round + 1) / ROUND_TARGETS.length;
+        const mood = .98 + Math.random() * .13;
+        const offerCeiling = state.currentOffer * (1.06 + progress * .12) * mood;
+        const valueCeiling = mean * (.72 + progress * .24) * mood;
+        const accepted = ask <= Math.min(offerCeiling, valueCeiling);
+
+        dom.counterHint.textContent = "银行家正在考虑你的要价……";
+        el("submitCounterBtn").disabled = true;
+        setTimeout(() => {
+          el("submitCounterBtn").disabled = false;
+          if (accepted) {
+            acceptDeal(roundOffer(ask), true);
+          } else {
+            closeModal(dom.offerModal);
+            playSound("counterRejected");
+            showToast(`银行家拒绝了 ${money(ask)} 的还价，本轮 NO DEAL。`, "bad");
+            advanceRound();
+          }
+        }, 1050);
+      }
+
+      function showFinalChoice() {
+        const remaining = remainingCases();
+        const other = remaining.find(c => c.number !== state.playerCase);
+        const own = remaining.find(c => c.number === state.playerCase);
+        if (!own || !other) return;
+        dom.yourCaseLabel.textContent = `#${String(own.number).padStart(2, "0")}`;
+        dom.otherCaseLabel.textContent = `#${String(other.number).padStart(2, "0")}`;
+        dom.finalAverage.textContent = money((own.amount + other.amount) / 2);
+        playSound("final");
+        openModal(dom.finalModal);
+        updateUI();
+      }
+
+      function finishWithCase(swap) {
+        const originalCase = state.cases.find(c => c.number === state.playerCase);
+        const otherCase = remainingCases().find(c => c.number !== state.playerCase);
+        const chosen = swap ? otherCase : originalCase;
+        closeModal(dom.finalModal);
+        playSound("finalReveal", chosen.amount);
+        state.phase = "finished";
+        state.locked = true;
+        revealAllCases();
+        saveResult(chosen.amount, false);
+        showResult({
+          winnings: chosen.amount,
+          originalValue: originalCase.amount,
+          kicker: swap ? "你选择了交换" : "你坚持了原箱",
+          copy: chosen.amount === 1000000
+            ? "百万大奖就在你选中的箱子里。"
+            : swap
+              ? `你交换到了 ${money(chosen.amount)}，另一边是 ${money(originalCase.amount)}。`
+              : `你的箱子里是 ${money(chosen.amount)}，最后另一个箱子是 ${money(otherCase.amount)}。`
+        });
+      }
+
+      function revealAllCases() {
+        state.cases.forEach(item => {
+          const button = dom.grid.querySelector(`[data-number="${item.number}"]`);
+          button.querySelector(".case-shell").dataset.amount = money(item.amount);
+          button.classList.add("opened");
+          button.disabled = true;
+        });
+        document.querySelectorAll(".money-value").forEach(node => node.classList.add("gone"));
+        updateUI();
+      }
+
+      function showResult({ winnings, originalValue, kicker, copy }) {
+        dom.resultKicker.textContent = kicker;
+        dom.winningsAmount.textContent = money(winnings);
+        dom.resultCopy.textContent = copy;
+        dom.actualWin.textContent = money(winnings);
+        dom.caseValue.textContent = money(originalValue);
+        setTimeout(() => openModal(dom.resultModal), 520);
+      }
+
+      function updateUI() {
+        const remainingCount = remainingCases().length;
+        const totalOpened = state.cases.filter(c => c.opened).length;
+        dom.progressBar.style.width = `${totalOpened / 24 * 100}%`;
+
+        if (state.phase === "choose") {
+          dom.instruction.textContent = "先选一个属于你的箱子";
+          dom.subInstruction.textContent = "它会陪你走到最后，除非你与银行家成交";
+          dom.caseCounter.innerHTML = "<strong>1</strong><span>请选择</span>";
+          dom.roundValue.textContent = "选择你的箱子";
+          dom.footerText.textContent = "金额已经随机装入26个箱子";
+        } else if (state.phase === "opening") {
+          const target = ROUND_TARGETS[state.round];
+          const left = target - state.openedThisRound;
+          dom.instruction.textContent = `请再打开 ${left} 个箱子`;
+          dom.subInstruction.textContent = "避开高额奖金，银行家的报价才会更慷慨";
+          dom.caseCounter.innerHTML = `<strong>${left}</strong><span>本轮剩余</span>`;
+          dom.roundValue.textContent = `第 ${state.round + 1} 轮 · 共 ${ROUND_TARGETS.length} 轮`;
+          dom.footerText.textContent = `场上还剩 ${remainingCount} 个未开箱子`;
+        } else if (state.phase === "offer") {
+          dom.instruction.textContent = "银行家正在报价";
+          dom.subInstruction.textContent = "成交、继续，或者提出你的价格";
+          dom.caseCounter.innerHTML = "<strong>--</strong><span>等待决定</span>";
+          dom.roundValue.textContent = `第 ${state.round + 1} 轮报价`;
+          dom.footerText.textContent = `场上还剩 ${remainingCount} 个未开箱子`;
+        } else if (state.phase === "final") {
+          dom.instruction.textContent = "只剩最后两个箱子";
+          dom.subInstruction.textContent = "坚持原箱，还是交换？";
+          dom.caseCounter.innerHTML = "<strong>2</strong><span>最后抉择</span>";
+          dom.roundValue.textContent = "终局";
+          dom.footerText.textContent = "命运已经装在两个箱子里";
+        } else if (state.phase === "finished") {
+          dom.instruction.textContent = "本局结束";
+          dom.subInstruction.textContent = "所有箱子已经揭晓";
+          dom.caseCounter.innerHTML = "<strong>26</strong><span>已揭晓</span>";
+          dom.roundValue.textContent = "游戏结束";
+          dom.footerText.textContent = "再玩一局，看看下一次会走多远";
+        }
+
+        if (state.lastOffer) dom.lastOffer.textContent = money(state.lastOffer);
+        dom.grid.querySelectorAll(".case").forEach(button => {
+          const number = Number(button.dataset.number);
+          const item = state.cases.find(c => c.number === number);
+          const canChoose = state.phase === "choose" && !state.locked;
+          const canOpen = state.phase === "opening" && !state.locked && number !== state.playerCase && !item.opened;
+          button.disabled = !(canChoose || canOpen);
+        });
+      }
+
+      function openModal(modal) {
+        if (modal === dom.offerModal) document.body.classList.add("offer-open");
+        modal.classList.add("show");
+        const focusable = modal.querySelector("button, input");
+        setTimeout(() => focusable && focusable.focus(), 80);
+      }
+
+      function closeModal(modal) {
+        modal.classList.remove("show");
+        if (modal === dom.offerModal) document.body.classList.remove("offer-open");
+      }
+
+      function showToast(message, tone = "") {
+        clearTimeout(toastTimer);
+        dom.toast.textContent = message;
+        dom.toast.className = `toast show ${tone}`;
+        toastTimer = setTimeout(() => { dom.toast.className = "toast"; }, 2800);
+      }
+
+      el("dealBtn").addEventListener("click", () => acceptDeal(state.currentOffer));
+      el("noDealBtn").addEventListener("click", () => rejectOffer());
+      el("counterBtn").addEventListener("click", () => {
+        dom.counterPanel.classList.add("show");
+        dom.counterInput.focus();
+      });
+      el("submitCounterBtn").addEventListener("click", submitCounter);
+      dom.counterInput.addEventListener("keydown", event => { if (event.key === "Enter") submitCounter(); });
+      el("keepBtn").addEventListener("click", () => finishWithCase(false));
+      el("swapBtn").addEventListener("click", () => finishWithCase(true));
+      el("playAgainBtn").addEventListener("click", initGame);
+      el("newGameBtn").addEventListener("click", initGame);
+      dom.soundBtn.addEventListener("click", toggleSound);
+      el("rulesBtn").addEventListener("click", () => openModal(dom.rulesModal));
+      el("closeRulesBtn").addEventListener("click", () => closeModal(dom.rulesModal));
+      dom.rulesModal.addEventListener("click", event => { if (event.target === dom.rulesModal) closeModal(dom.rulesModal); });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && dom.rulesModal.classList.contains("show")) closeModal(dom.rulesModal);
+      });
+
+      updateSoundButton();
+      initGame();
+    })();
+  </script>
+</body>
+</html>
